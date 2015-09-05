@@ -1,0 +1,103 @@
+% setwd("C://aaaWork//Class Materials//MnDNR_ShortCourse//Readings//Mortality//")
+% Sweave("Mortality.Rnw")
+
+\documentclass[a4paper]{article}
+\include{../preamble}
+
+\begin{document}
+\SweaveOpts{prefix.string=figs/mort}
+\SweaveOpts{eps=FALSE}
+\SweaveOpts{width=5,height=5}
+
+\title{Mortality Estimation}
+\date{}  % makes date blank -- title will only have the title above then
+\maketitle
+\vspace{-72pt}
+
+<<echo=false,results=hide>>=
+options(width=90)
+options(SweaveHooks = list(fig = function() par(mar=c(3.5,3.5,1,1),mgp=c(2,0.75,0))))
+library(FSA)
+detach.all()
+@
+
+\section{Initialization}
+<<results=hide>>=
+library(FSA)
+setwd("C://aaaWork/Class Materials//MnDNR_ShortCourse//Readings//mortality//")
+@
+
+\section{Previously Summarized Catches}
+\subsection{From First Principles}
+
+<<label=CCurve1,fig=TRUE,include=FALSE>>=
+age <- 0:5
+ct <- c(47,102,126,104,81,64)
+logct <- log(ct)
+plot(logct~age,pch=19,cex=1.25)
+@
+\includegraphics[width=3in]{Figs/mort-CCurve1}
+
+<<label=CCurve2,fig=TRUE,include=FALSE>>=
+rows2use <- 3:6
+age2 <- age[rows2use]
+logct2 <- logct[rows2use]
+lm1 <- lm(logct2~age2)
+summary(lm1)
+confint(lm1)
+fit.plot(lm1)
+@
+\includegraphics[width=3in]{Figs/mort-CCurve2}
+
+\subsection{Using \R{catch.curve()}}
+<<label=CCurve3,fig=TRUE,include=FALSE>>=
+cc1 <- catch.curve(age,ct,2:5)
+summary(cc1)
+confint(cc1)
+summary(cc1,type="params")
+confint(cc1,type="params")
+plot(cc1)
+@
+\includegraphics[width=3in]{Figs/mort-CCurve3}
+
+
+\section{Data File of Ages}
+
+<<label=CCurve4,fig=TRUE,include=FALSE>>=
+data(FWDrumLE1)
+str(FWDrumLE1)
+rhead(FWDrumLE1)
+age.freq <- table(FWDrumLE1$age)
+age.freq
+age <- as.numeric(rownames(age.freq))
+freq <- as.numeric(age.freq)
+plot(log(freq)~age,pch=19,cex=1.25)
+@
+\includegraphics[width=3in]{Figs/mort-CCurve4}
+
+NOTE that no fish of age-12 were observed.
+
+<<label=CCurve5,fig=TRUE,include=FALSE>>=
+cc2 <- catch.curve(age,freq,c(5:11,13,14))
+summary(cc2,type="params")
+confint(cc2,type="params")
+plot(cc2)
+@
+\includegraphics[width=3in]{Figs/mort-CCurve5}
+
+<<>>=
+cc3 <- catch.curve(age,freq,5:11)
+summary(cc3,type="params")
+confint(cc3,type="params")
+@
+
+\section{Chapman-Robson Method}
+<<label=CRobson1,fig=TRUE,include=FALSE>>=
+cr1 <- chapman.robson(age,freq,5:11)
+summary(cr1)
+confint(cr1)
+plot(cr1)
+@
+\includegraphics[width=4in]{Figs/mort-CRobson1}
+
+\end{document}

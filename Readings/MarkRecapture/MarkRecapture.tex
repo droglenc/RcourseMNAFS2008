@@ -1,0 +1,548 @@
+% setwd("C://aaaWork//Class Materials//MnDNR_ShortCourse//Readings//MarkRecapture//")
+% Sweave("MarkRecapture.Rnw")
+
+\documentclass[a4paper]{article}
+\include{../preamble}
+
+\usepackage{C:/Apps/R/R-2.6.1/share/texmf/Sweave}
+\begin{document}
+
+
+
+
+\title{Mark-Recapture Estimates of Abundance}
+\date{}  % makes date blank -- title will only have the title above then
+\maketitle
+\vspace{-72pt}
+
+
+\section{Initialization}
+\begin{Schunk}
+\begin{Sinput}
+> library(FSA)
+> setwd("C://aaaWork/Class Materials//MnDNR_ShortCourse//Readings//MarkRecapture//")
+\end{Sinput}
+\end{Schunk}
+
+\section{Summarizing Capture Histories}
+\subsection{Data Recorded in Capture History Format}
+\begin{Schunk}
+\begin{Sinput}
+> data(PikeNYPartial1)
+> str(PikeNYPartial1)
+\end{Sinput}
+\begin{Soutput}
+'data.frame':	57 obs. of  5 variables:
+ $ id    : int  2001 2002 2003 2004 2005 2006 2007 2008 2009 2010 ...
+ $ first : int  1 1 1 1 1 1 1 1 1 1 ...
+ $ second: int  0 0 0 0 0 0 0 0 0 0 ...
+ $ third : int  0 0 0 0 0 0 0 0 0 0 ...
+ $ fourth: int  0 0 0 0 0 0 0 0 0 0 ...
+\end{Soutput}
+\begin{Sinput}
+> rhead(PikeNYPartial1)
+\end{Sinput}
+\begin{Soutput}
+     id first second third fourth
+46 2046     0      0     1      0
+11 2011     1      0     0      0
+18 2018     1      0     0      0
+23 2023     1      1     0      0
+55 2055     0      0     0      1
+56 2056     0      0     0      1
+\end{Soutput}
+\begin{Sinput}
+> pikech1 <- caphist.sum(PikeNYPartial1, cols = 2:5)
+> str(pikech1)
+\end{Sinput}
+\begin{Soutput}
+List of 4
+ $ caphist.sum : 'table' int [, 1:10] 5 8 2 12 1 2 21 1 2 3
+  ..- attr(*, "dimnames")=List of 1
+  .. ..$ : chr [1:10] "0001" "0010" "0011" "0100" ...
+ $ schnabel.sum:'data.frame':	4 obs. of  4 variables:
+  ..$ n: int [1:4] 27 18 14 9
+  ..$ m: num [1:4] 0 3 4 4
+  ..$ R: num [1:4] 27 18 14 0
+  ..$ M: num [1:4] 0 27 42 52
+ $ methodB.top : int [1:4, 1:4] NA NA NA NA 3 NA NA NA 2 2 ...
+ $ methodB.bot : num [1:4, 1:4] 0 27 27 27 3 15 18 18 4 10 ...
+  ..- attr(*, "dimnames")=List of 2
+  .. ..$ : chr [1:4] "m" "u" "n" "R"
+  .. ..$ : NULL
+ - attr(*, "class")= chr "CapHist"
+\end{Soutput}
+\begin{Sinput}
+> pikech1$caphist.sum
+\end{Sinput}
+\begin{Soutput}
+0001 0010 0011 0100 0101 0110 1000 1001 1010 1100
+   5    8    2   12    1    2   21    1    2    3
+\end{Soutput}
+\begin{Sinput}
+> pikech1$schnabel.sum
+\end{Sinput}
+\begin{Soutput}
+   n m  R  M
+1 27 0 27  0
+2 18 3 18 27
+3 14 4 14 42
+4  9 4  0 52
+\end{Soutput}
+\end{Schunk}
+
+\subsection{Data Recorded in Capture-by-Date Format}
+\begin{Schunk}
+\begin{Sinput}
+> data(PikeNYPartial2)
+> rhead(PikeNYPartial2)
+\end{Sinput}
+\begin{Soutput}
+   sample   id
+65 fourth 2054
+48 fourth 2027
+50  third 2041
+7   first 2007
+60  third 2051
+28 second 2028
+\end{Soutput}
+\begin{Sinput}
+> ch.tab <- table(PikeNYPartial2$id, PikeNYPartial2$sample)
+> head(ch.tab)
+\end{Sinput}
+\begin{Soutput}
+       first fourth second third
+  2001     1      0      0     0
+  2002     1      0      0     0
+  2003     1      0      0     0
+  2004     1      0      0     0
+  2005     1      0      0     0
+  2006     1      0      0     0
+\end{Soutput}
+\begin{Sinput}
+> ch.df1 <- as.data.frame(ch.tab)
+> rhead(ch.df1)
+\end{Sinput}
+\begin{Soutput}
+    Var1   Var2 Freq
+167 2053 second    0
+222 2051  third    1
+213 2042  third    0
+204 2033  third    0
+202 2031  third    0
+78  2021 fourth    0
+\end{Soutput}
+\begin{Sinput}
+> ch.df2 <- unstack(ch.df1, Freq ~ Var2)
+> rhead(ch.df2)
+\end{Sinput}
+\begin{Soutput}
+   first fourth second third
+57     0      1      0     0
+34     0      0      1     0
+35     0      0      1     0
+3      1      0      0     0
+12     1      0      0     0
+39     0      0      1     0
+\end{Soutput}
+\begin{Sinput}
+> ch.df2 <- ch.df2[, c(1, 3, 4, 2)]
+> rhead(ch.df2)
+\end{Sinput}
+\begin{Soutput}
+   first second third fourth
+33     0      1     0      0
+26     1      0     1      0
+38     0      1     0      0
+7      1      0     0      0
+4      1      0     0      0
+28     0      1     0      0
+\end{Soutput}
+\begin{Sinput}
+> pikech2 <- caphist.sum(ch.df2)
+> pikech2$caphist.sum
+\end{Sinput}
+\begin{Soutput}
+0001 0010 0011 0100 0101 0110 1000 1001 1010 1100
+   5    8    2   12    1    2   21    1    2    3
+\end{Soutput}
+\end{Schunk}
+
+
+\section{Closed Population Single Sample -- Jackson Lake Bluegill}
+\subsection{Petersen Method}
+\begin{Schunk}
+\begin{Sinput}
+> data(BluegillJL)
+> str(BluegillJL)
+\end{Sinput}
+\begin{Soutput}
+'data.frame':	277 obs. of  2 variables:
+ $ first : int  1 0 1 0 1 1 1 1 1 1 ...
+ $ second: int  0 1 0 1 0 0 0 0 0 0 ...
+\end{Soutput}
+\begin{Sinput}
+> rhead(BluegillJL)
+\end{Sinput}
+\begin{Soutput}
+    first second
+80      0      1
+269     1      0
+81      1      0
+117     1      0
+270     1      0
+110     1      0
+\end{Soutput}
+\begin{Sinput}
+> bgch <- caphist.sum(BluegillJL)
+> bgch$caphist.sum
+\end{Sinput}
+\begin{Soutput}
+ 01  10  11
+ 81 187   9
+\end{Soutput}
+\begin{Sinput}
+> mr1 <- mr.closed1(196, 90, 9)
+> summary(mr1)
+\end{Sinput}
+\begin{Soutput}
+Used the 'naive' Petersen method.
+Observed inputs of: M=196, n=90, and m=9.
+Resulted in a population estimate (N) of 1960.
+\end{Soutput}
+\begin{Sinput}
+> confint(mr1)
+\end{Sinput}
+\begin{Soutput}
+The Poisson method was used to construct the CI for N.
+ 95% LCI 95% UCI
+   975.4  3448.4
+\end{Soutput}
+\begin{Sinput}
+> confint(mr1, citype = "hypergeom")
+\end{Sinput}
+\begin{Soutput}
+The hypergeom method was used to construct the CI for N.
+ 95% LCI 95% UCI
+    1101    4151
+\end{Soutput}
+\end{Schunk}
+
+\subsection{Chapman Modification}
+\begin{Schunk}
+\begin{Sinput}
+> mr2 <- mr.closed1(196, 90, 9, type = "C")
+> summary(mr2)
+\end{Sinput}
+\begin{Soutput}
+Used Chapman's modification of the Petersen method.
+Observed inputs of: M=196, n=90, and m=9.
+Resulted in a population estimate (N) of 1792.
+\end{Soutput}
+\begin{Sinput}
+> confint(mr2)
+\end{Sinput}
+\begin{Soutput}
+The Poisson method was used to construct the CI for N.
+ 95% LCI 95% UCI
+   990.3  3503.5
+\end{Soutput}
+\end{Schunk}
+
+\section{Closed Population Multiple Samples -- New York Pike}
+\subsection{Capture Summaries Already Known}
+\begin{Schunk}
+\begin{Sinput}
+> n <- c(27, 18, 14, 9)
+> m <- c(0, 3, 4, 4)
+> R <- c(27, 18, 14, 0)
+> ex1 <- mr.closed2(n, m, R, type = "S")
+> summary(ex1)
+\end{Sinput}
+\begin{Soutput}
+Used the Schnabel method with Chapman modification.
+Resulted in a population estimate (N) of 128.
+\end{Soutput}
+\begin{Sinput}
+> confint(ex1)
+\end{Sinput}
+\begin{Soutput}
+The Poisson method was used to construct the CI for N.
+ 95% LCI 95% UCI
+    74.6   237.6
+\end{Soutput}
+\end{Schunk}
+
+\subsection{Capture Histories were Recorded}
+This (re)uses the the \R{PikeNYPartial1} data frame and \R{pikech1} object introduced in a previous section.
+\begin{Schunk}
+\begin{Sinput}
+> ex2 <- mr.closed2(pikech1)
+> summary(ex2)
+\end{Sinput}
+\begin{Soutput}
+Used the Schnabel method with Chapman modification.
+Resulted in a population estimate (N) of 128.
+\end{Soutput}
+\begin{Sinput}
+> confint(ex2)
+\end{Sinput}
+\begin{Soutput}
+The Poisson method was used to construct the CI for N.
+ 95% LCI 95% UCI
+    74.6   237.6
+\end{Soutput}
+\begin{Sinput}
+> plot(ex2, loess = TRUE)
+\end{Sinput}
+\end{Schunk}
+\includegraphics[width=3in]{Figs/mr-Schnabel1}
+
+\subsection{Schumacher-Eschmeyer Method}
+\begin{Schunk}
+\begin{Sinput}
+> ex3 <- mr.closed2(pikech1, type = "SE")
+> summary(ex3)
+\end{Sinput}
+\begin{Soutput}
+Used the Schumacher-Eschmeyer method.
+Resulted in a population estimate (N) of 136.
+\end{Soutput}
+\begin{Sinput}
+> confint(ex3)
+\end{Sinput}
+\begin{Soutput}
+The normal method was used to construct the CI for N.
+ 95% LCI 95% UCI
+    96.6   229.8
+\end{Soutput}
+\end{Schunk}
+
+\section{Open Population Multiple Samples}
+\subsection{Capture Histories Given}
+\begin{Schunk}
+\begin{Sinput}
+> data(CutthroatAL)
+> rhead(CutthroatAL)
+\end{Sinput}
+\begin{Soutput}
+     ID first second third
+277 277     0      1     0
+56   56     0      0     1
+328 328     0      1     0
+310 310     0      1     0
+11   11     0      0     1
+81   81     0      0     1
+\end{Soutput}
+\begin{Sinput}
+> ch1 <- caphist.sum(CutthroatAL, cols = -1)
+> ch1$methodB.top
+\end{Sinput}
+\begin{Soutput}
+     [,1] [,2] [,3]
+[1,]   NA   17    4
+[2,]   NA   NA   75
+[3,]   NA   NA   NA
+\end{Soutput}
+\begin{Sinput}
+> ch1$methodB.bot
+\end{Sinput}
+\begin{Soutput}
+  [,1] [,2] [,3]
+m    0   17   79
+u   75  244  198
+n   75  261  277
+R   75  261    0
+\end{Soutput}
+\begin{Sinput}
+> ex1 <- mr.open(ch1)
+> summary(ex1)
+\end{Sinput}
+\begin{Soutput}
+Observables
+   m   n   R  r  z
+1  0  75  75 21 NA
+2 17 261 261 75  4
+3 79 277   0 NA NA
+
+Estimates
+     M M.se     N  N.se   phi phi.se  B B.se
+1   NA   NA    NA    NA 0.411  0.098 NA   NA
+2 30.8    6 448.2 108.2    NA     NA NA   NA
+3   NA   NA    NA    NA    NA     NA NA   NA
+
+Standard error of phi includes sampling and individual variability.
+\end{Soutput}
+\begin{Sinput}
+> confint(ex1)
+\end{Sinput}
+\begin{Soutput}
+The Jolly method was used to construct confidence intervals.
+
+  N.lci N.uci phi.lci phi.uci B.lci B.uci
+1    NA    NA   0.218   0.603    NA    NA
+2 236.1 660.2      NA      NA    NA    NA
+3    NA    NA      NA      NA    NA    NA
+\end{Soutput}
+\end{Schunk}
+
+\subsection{Summaries Known, Must Be Entered into Vectors}
+\begin{Schunk}
+\begin{Sinput}
+> s1 <- rep(NA, 5)
+> s2 <- c(6, rep(NA, 4))
+> s3 <- c(7, 3, rep(NA, 3))
+> s4 <- c(7, 4, 6, NA, NA)
+> s5 <- c(4, 3, 6, 9, NA)
+> mb.top <- cbind(s1, s2, s3, s4, s5)
+> mb.top
+\end{Sinput}
+\begin{Soutput}
+     s1 s2 s3 s4 s5
+[1,] NA  6  7  7  4
+[2,] NA NA  3  4  3
+[3,] NA NA NA  6  6
+[4,] NA NA NA NA  9
+[5,] NA NA NA NA NA
+\end{Soutput}
+\begin{Sinput}
+> m <- c(0, 6, 10, 17, 22)
+> u <- c(28, 21, 22, 17, 11)
+> n <- c(28, 27, 32, 34, 33)
+> R <- c(28, 27, 32, 34, 0)
+> mb.bot <- rbind(m, u, n, R)
+> mb.bot
+\end{Sinput}
+\begin{Soutput}
+  [,1] [,2] [,3] [,4] [,5]
+m    0    6   10   17   22
+u   28   21   22   17   11
+n   28   27   32   34   33
+R   28   27   32   34    0
+\end{Soutput}
+\begin{Sinput}
+> ex2 <- mr.open(mb.top, mb.bot)
+> summary(ex2)
+\end{Sinput}
+\begin{Soutput}
+Observables
+   m  n  R  r  z
+1  0 28 28 24 NA
+2  6 27 27 10 18
+3 10 32 32 12 18
+4 17 34 34  9 13
+5 22 33  0 NA NA
+
+Estimates
+     M M.se     N N.se   phi phi.se     B B.se
+1   NA   NA    NA   NA 1.851  0.460    NA   NA
+2 51.8 14.5 207.3 89.3 0.765  0.246   8.6 66.8
+3 55.7 13.6 167.1 56.1 0.804  0.266 -12.9 37.4
+4 62.5 17.2 121.5 37.5    NA     NA    NA   NA
+5   NA   NA    NA   NA    NA     NA    NA   NA
+
+Standard error of phi includes sampling and individual variability.
+\end{Soutput}
+\begin{Sinput}
+> confint(ex2)
+\end{Sinput}
+\begin{Soutput}
+The Jolly method was used to construct confidence intervals.
+
+  N.lci N.uci phi.lci phi.uci  B.lci B.uci
+1    NA    NA   0.949   2.752     NA    NA
+2  32.2 382.3   0.283   1.247 -122.4 139.5
+3  57.2 277.0   0.283   1.326  -86.3  60.5
+4  47.9 195.1      NA      NA     NA    NA
+5    NA    NA      NA      NA     NA    NA
+\end{Soutput}
+\end{Schunk}
+
+\section{Analyses with \R{Rcapture} Package}
+The ``program MARK'' is the industry standard for analyze capture-recapture data in a log-linear framework.  This software depends on data organized in capture history format as illustrated in these notes.  Recently the \R{Rcapture} package was introduced as a means of fitting the log-linear capture-recapture models in R.  This package is available for download from CRAN and an article describing how to use \R{Rcapture} can be found in the April 2007 issue of the on-line Journal of Statistical Software (\url{http://www.jstatsoft.org}).
+
+For those of you familiar with ``program MARK'' you may recognize some of the output below.
+
+\begin{Schunk}
+\begin{Sinput}
+> library(Rcapture)
+> d <- descriptive(PikeNYPartial1[, 2:5])
+> plot(d)
+\end{Sinput}
+\end{Schunk}
+\includegraphics[width=5in]{Figs/mr-Rcapture1}
+
+\begin{Schunk}
+\begin{Sinput}
+> r <- closedp(PikeNYPartial1[, 2:5])
+> r
+\end{Sinput}
+\begin{Soutput}
+Number of captured units: 57
+
+Abundance estimations and model fits:
+              abundance  stderr  deviance  df     AIC
+M0                145.7    35.7    15.756  13  51.235
+Mt                139.0    33.5     4.201  10  45.680
+Mh Chao           145.7    35.7    15.756  13  51.235
+Mh Poisson2        57.0    20.2    13.752  12  51.230
+Mh Darroch         57.0     0.0    13.752  12  51.230
+Mth Chao          139.0    33.5     4.201  10  45.680
+Mth Poisson2       57.0    19.5     2.310   9  45.788
+Mth Darroch        57.0     0.0     2.310   9  45.788
+Mb                 64.5     5.4     4.271  12  41.750
+Mbh                64.9     8.5     4.265  11  43.744
+
+Note: 2 eta parameters has been set to zero in the Mh Chao model
+Note: 2 eta parameters has been set to zero in the Mth Chao model
+\end{Soutput}
+\begin{Sinput}
+> r1 <- openp(PikeNYPartial1[, 2:5])
+> r1
+\end{Sinput}
+\begin{Soutput}
+Model fit:
+              deviance      df        AIC
+fitted model     2.683       7     50.162
+
+Test for trap effect:
+                                   deviance      df        AIC
+model with homogenous trap effect     2.683       6     52.162
+
+Capture probabilities:
+          estimate  stderr
+period 1        --      --
+period 2    0.1429  0.0830
+period 3    0.2222  0.1821
+period 4        --      --
+
+Survival probabilities:
+               estimate  stderr
+period 1 -> 2    0.7778  0.4647
+period 2 -> 3    0.5000  0.4098
+period 3 -> 4        --      --
+
+Abundances:
+          estimate  stderr
+period 1        --      --
+period 2       126    67.9
+period 3        63    49.5
+period 4        --      --
+
+Number of new arrivals:
+               estimate  stderr
+period 1 -> 2        --      --
+period 2 -> 3         0       0
+period 3 -> 4        --      --
+
+Total number of units who ever inhabited the survey area:
+             estimate  stderr
+all periods       132    56.1
+
+Total number of captured units: 57
+
+Note: 1 gamma parameter has been set to zero
+\end{Soutput}
+\end{Schunk}
+
+\end{document}

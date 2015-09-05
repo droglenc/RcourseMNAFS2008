@@ -1,0 +1,146 @@
+% setwd("C://aaaWork//Class Materials//MnDNR_ShortCourse//Readings//ExploreCPE//")
+% Sweave("ExploreCPE.Rnw")
+
+\documentclass[a4paper]{article}
+\include{../preamble}
+
+\begin{document}
+\SweaveOpts{prefix.string=figs/CPE}
+\SweaveOpts{eps=FALSE}
+\SweaveOpts{width=5,height=5}
+
+\title{Exploring CPE Data}
+\date{}  % makes date blank -- title will only have the title above then
+\maketitle
+
+<<echo=false,results=hide>>=
+setwd("C://aaaWork/Class Materials//MnDNR_ShortCourse//Readings//ExploreCPE//")
+options(width=90)
+options(SweaveHooks = list(fig = function() par(mar=c(3.5,3.5,1,1),mgp=c(2,0.75,0))))
+library(FSA)
+detach.all()
+@
+
+Don Pereira provided me with a an Excel spreadsheet that contained historic gillnet catch summary information for walleyes captured in Minnesota lakes with a primary lake classification ID of 22.  These data can be used to demonstrate a variety of data analysis concepts.  I will use this information to demonstrate some basic data entry principles for R and a graphical exploration of the distribution of CPE in these lakes.
+
+\section{Data Issues}
+The original data file that I received had one major and several minor issues.  The major issue was that the the last three columns were formatted as text rather than numeric data (see below).  Fortunately, this issue is easy to correct by selecting all of the cells treated as text and telling Excel to ``Convert to Number''
+  
+\includegraphics[width=6in]{Figs/static_Data.JPG}
+
+The minor issues include
+
+\begin{Enumerate}
+  \item Ten rows of meta-information that must be ignored by R.
+  \item Column names that contain spaces and other characters.
+  \item Column names that are too long.
+  \item A first column that contains data information (R will treat this numerically unless we explicitly ask it not to).
+\end{Enumerate}
+
+Fortunately all of these issues can be easily handled when importing the data with \R{read.xls()} as illustrated below,
+<<results=hide>>=
+library(xlsReadWrite)
+setwd("C://aaaWork//Class Materials//MnDNR_ShortCourse//Readings//ExploreCPE//")
+@
+<<>>=
+wae22 <- read.xls("lakeclass22waeGNCUE_mod.xls",from=11,colClasses=c("isodate",rep("numeric",6)),colNames=c("date","sets","catch","cpe","ttl.wght","wght.set","mean.wght"))
+str(wae22)
+rhead(wae22)
+@
+
+\section{CPE Comparison Graph}
+Suppose we want a graphic to show how ``our lake'' with a CPE=10.6 compares to the historical catches.
+
+<<>>=
+attach(wae22)
+my.cpe <- 10.6
+@
+
+\subsection{Histograms}
+<<label=Hist1,fig=TRUE,include=FALSE>>=
+hist(cpe,main="Walleye, Classification=22",breaks=20)
+abline(v=my.cpe,col="red",lty=2,lwd=3)
+@
+\includegraphics[width=3in]{Figs/cpe-Hist1.pdf}
+
+<<label=Hist2,fig=TRUE,include=FALSE>>=
+hist(cpe,main="Walleye, Classification=22",breaks=20)
+points(my.cpe,4,col="blue",pch=19,cex=2)
+@
+\includegraphics[width=3in]{Figs/cpe-Hist2.pdf}
+
+<<label=Hist3,fig=TRUE,include=FALSE>>=
+hist(cpe,main="Walleye, Classification=22",breaks=20)
+arrows(my.cpe,8,my.cpe,5,col="turquoise",lwd=3)
+@
+\includegraphics[width=3in]{Figs/cpe-Hist3.pdf}
+
+\subsection{Boxplots}
+<<>>=
+<<label=Box1,fig=TRUE,include=FALSE>>=
+boxplot(cpe,main="Walleye, Classification=22")
+abline(h=my.cpe,col="red",lty=2,lwd=3)
+@
+\includegraphics[width=3in]{Figs/cpe-Box1.pdf}
+
+<<label=Box2,fig=TRUE,include=FALSE>>=
+boxplot(cpe,main="Walleye, Classification=22")
+points(1,my.cpe,col="blue",pch=19,cex=2)
+@
+\includegraphics[width=3in]{Figs/cpe-Box2.pdf}
+
+\subsection{Combined}
+
+<<label=HistBox1,fig=TRUE,include=FALSE>>=
+layout(matrix(c(2,1),2,1),heights=c(25,75))
+hist(cpe,main="",breaks=20)
+points(my.cpe,4,col="blue",pch=19,cex=1.5)
+boxplot(cpe,main="Walleye, Classification=22",horizontal=TRUE,ylim=c(0,35))
+points(my.cpe,1,col="blue",pch=19,cex=1.5)
+@
+\includegraphics[width=4in]{Figs/cpe-HistBox1.pdf}
+
+Suppose that my lake also had an average weight per set of 19.2.
+
+<<echo=false,results=hide>>=
+options(SweaveHooks = list(fig = function() par(mar=c(3.5,3.5,0,0),mgp=c(2,0.75,0))))
+@
+<<label=HistBox2,fig=TRUE,include=FALSE>>=
+my.wght.set <- 19.2
+layout(matrix(c(2,0,1,3),2,2,byrow=TRUE),heights=c(25,75),widths=c(75,25))
+par(mar=c(3.5,3.5,0,0))
+plot(wght.set~cpe,pch=19,xlab="CPE",ylab="Weight per Set",xlim=c(0,35),ylim=c(0,35))
+abline(v=my.cpe,col="blue",lwd=2,lty=2)
+abline(h=my.wght.set,col="blue",lwd=2,lty=2)
+points(my.cpe,my.wght.set,col="blue",pch=19,cex=1.5)
+boxplot(cpe,horizontal=TRUE,ylim=c(0,35),xaxt="n")
+points(my.cpe,1,col="blue",pch=19,cex=1.5)
+boxplot(wght.set,ylim=c(0,35),yaxt="n")
+points(1,my.wght.set,col="blue",pch=19)
+@
+\includegraphics[width=4in]{Figs/cpe-HistBox2.pdf}
+
+\subsection{As a Function}
+<<>>=
+comp.wae22 <- function(my.cpe,my.wght.set,col="blue") {
+layout(matrix(c(2,0,1,3),2,2,byrow=TRUE),heights=c(25,75),widths=c(75,25))
+par(mar=c(3.5,3.5,0,0))
+plot(wght.set~cpe,pch=19,xlab="CPE",ylab="Weight per Set",xlim=c(0,35),ylim=c(0,35))
+abline(v=my.cpe,col=col,lwd=2,lty=2)
+abline(h=my.wght.set,col=col,lwd=2,lty=2)
+points(my.cpe,my.wght.set,col=col,pch=19,cex=1.5)
+boxplot(cpe,horizontal=TRUE,ylim=c(0,35),xaxt="n")
+points(my.cpe,1,col=col,pch=19,cex=1.5)
+boxplot(wght.set,ylim=c(0,35),yaxt="n")
+points(1,my.wght.set,col=col,pch=19)
+}
+@
+
+Now try an example lake with a cpe of 3 and weight set of 20.
+
+<<label=HistBox3,fig=TRUE,include=FALSE>>=
+comp.wae22(3,20,"red")
+@
+\includegraphics[width=4in]{Figs/cpe-HistBox3.pdf}
+
+\end{document}

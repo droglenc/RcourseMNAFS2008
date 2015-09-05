@@ -1,0 +1,142 @@
+% setwd("C://aaaWork//Class Materials//MnDNR_ShortCourse//Readings//PSD//")
+% Sweave("PSD.Rnw")
+
+\documentclass[a4paper]{article}
+\include{../preamble}
+
+\begin{document}
+\SweaveOpts{prefix.string=figs/PSD}
+\SweaveOpts{eps=FALSE}
+\SweaveOpts{width=5,height=5}
+
+\title{Proportional Stock Density}
+\date{}  % makes date blank -- title will only have the title above then
+\maketitle
+\vspace{-72pt}
+
+<<echo=false,results=hide>>=
+options(width=90)
+options(SweaveHooks = list(fig = function() par(mar=c(3.5,3.5,1,1),mgp=c(2,0.75,0))))
+library(FSA)
+detach.all()
+@
+
+\section{Initialization}
+<<results=hide>>=
+library(FSA)
+library(xlsReadWrite)
+setwd("C://aaaWork/Class Materials//MnDNR_ShortCourse//Readings//PSD//")
+@
+
+\section{Data}
+<<>>=
+d <- read.xls("lab1a.xls",colClasses=c("factor","isodate","factor","factor","numeric","numeric","numeric","factor"))
+str(d)
+levels(d$species)
+lmb <- subset(d,species=="LMB")
+dim(lmb)
+bg <- subset(d,species=="BG")
+dim(bg)
+wae <- subset(d,species=="WAE")
+dim(wae)
+yep <- subset(d,species=="YEP")
+dim(yep)
+@
+
+\section{Summaries and Visualizations}
+<<label=mhist1,fig=TRUE,include=FALSE>>=
+mhist(d$inches~d$species,same.breaks=FALSE,same.ylim=FALSE,breaks=15)
+@
+\includegraphics[width=6in]{Figs/PSD-mhist1}
+
+<<>>=
+tapply(d$inches,d$species,FUN=Summary,numdigs=2)
+@
+
+\section{PSD -- Largemouth Bass}
+\subsection{Method I}
+<<>>=
+lmb1 <- lencat(lmb,"inches",w=1)
+rhead(lmb1)
+lmb.tbl <- table(lmb1$LCat)
+lmb.tbl
+lmb.rcum <- rcumsum(lmb.tbl)
+lmb.rcum
+RSDval("Largemouth bass",metric=FALSE)
+lmb.stock <- lmb.rcum["8"]
+lmb.stock
+lmb.qual <- lmb.rcum["12"]
+lmb.qual
+lmb.psd <- lmb.qual/lmb.stock
+lmb.psd
+bin.ci(lmb.qual,lmb.stock)
+@
+
+\subsection{Method II}
+<<>>=
+lmb.cuts <- RSDval("Largemouth bass",metric=FALSE)
+lmb.cuts
+lmb2 <- lencat(lmb,"inches",breaks=c(0,lmb.cuts))
+lmb2.tbl <- table(lmb2$LCat)
+lmb2.tbl
+lmb2.rcum <- rcumsum(lmb2.tbl)
+lmb2.rcum
+lmb.stock <- lmb2.rcum["8"]
+lmb.qual <- lmb2.rcum["12"]
+lmb.psd <- lmb.qual/lmb.stock
+lmb.psd
+bin.ci(lmb.qual,lmb.stock)
+@
+
+\section{PSD -- Bluegill}
+<<>>=
+bg.cuts <- RSDval("Bluegill",metric=FALSE)
+bg.cuts
+bg1 <- lencat(bg,"inches",breaks=c(0,bg.cuts))
+bg.tbl <- table(bg1$LCat)
+bg.rcum <- rcumsum(bg.tbl)
+bg.rcum
+bg.stock <- bg.rcum["3"]
+bg.qual <- bg.rcum["6"]
+bg.psd <- bg.qual/bg.stock
+bg.psd
+bin.ci(bg.qual,bg.stock)
+@
+
+
+\section{Tic-Tac-Toe Graph -- Largemouth Bass and Bluegill}
+<<label=TTT1,fig=TRUE,include=FALSE>>=
+tictactoe()
+tictactoe.add(c(lmb.qual,lmb.stock),c(bg.qual,bg.stock),pt.col="blue")
+@
+\includegraphics[width=4in]{Figs/PSD-TTT1}
+
+\section{PSD -- Walleye and Yellow Perch}
+<<>>=
+wae.cuts <- RSDval("Walleye",metric=FALSE)
+wae.cuts
+wae1 <- lencat(wae,"inches",breaks=c(0,wae.cuts))
+wae.tbl <- table(wae1$LCat)
+wae.rcum <- rcumsum(wae.tbl)
+wae.stock <- wae.rcum["10"]
+wae.qual <- wae.rcum["15"]
+
+yep.cuts <- RSDval("Yellow perch",metric=FALSE)
+yep.cuts
+yep1 <- lencat(yep,"inches",breaks=c(0,yep.cuts))
+yep.tbl <- table(yep1$LCat)
+yep.rcum <- rcumsum(yep.tbl)
+yep.stock <- yep.rcum["5"]
+yep.qual <- yep.rcum["8"]
+@
+<<eval=FALSE>>=
+tictactoe.add(c(wae.qual,wae.stock),c(yep.qual,yep.stock),pt.col="green")
+@
+<<label=TTT2,fig=TRUE,include=FALSE,echo=FALSE>>=
+tictactoe()
+tictactoe.add(c(lmb.qual,lmb.stock),c(bg.qual,bg.stock),pt.col="blue")
+tictactoe.add(c(wae.qual,wae.stock),c(yep.qual,yep.stock),pt.col="green")
+@
+\includegraphics[width=4in]{Figs/PSD-TTT2}
+
+\end{document}

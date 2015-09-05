@@ -1,0 +1,229 @@
+% setwd("C://aaaWork//web//MnDNR_PopDyn//Readings//ExploreLW//")
+% Sweave("ExploreLW.Rnw")
+
+\documentclass[a4paper]{article}
+\include{../preamble}
+
+\begin{document}
+\SweaveOpts{prefix.string=figs/lw}
+\SweaveOpts{eps=FALSE}
+\SweaveOpts{width=5,height=5}
+
+\title{Exploring Length-Weight Data}
+\date{}  % makes date blank -- title will only have the title above then
+\maketitle
+
+<<echo=false,results=hide>>=
+setwd("C://aaaWork//web//MnDNR_PopDyn//Readings//ExploreLW//")
+options(width=90)
+options(SweaveHooks = list(fig = function() par(mar=c(3.5,3.5,1,1),mgp=c(2,0.75,0))))
+library(FSA)
+detach.all()
+@
+
+In this document, you will use R to explore length and weight data recorded for 100 bluegills captured from Lake Mary, Minnesota.  The objective for this analysis is to become familiar with the R interface and to see what types of analyses R can perform.  Some of the specific functions used in this document will be discussed in more detail at the workshop.  However, you should follow these commands to get a general feel for R.
+
+\section{Initialization} \label{sect:Inits}
+Nearly all R sessions will begin with you loading packages that you have previously installed.  This R session will only require the \R{FSA} package (and the packages that it depends on).  Thus, assuming that you have already installed R and the packages it depends on (if not then see \href{http://fwcb.cfans.umn.edu/courses/fisheryupdate/Readings/RSetup/RSetup.pdf}{this document}), you should load R with,
+
+<<eval=FALSE>>=
+library(FSA)
+@
+
+The typical second step in most analyses is to load an external file that contains the data to analyze.  The data that you will use in this session is the Lake Mary bluegill data found in the \dfile{BluegillLM1.xls} Excel spreadsheet that is linked to on the \href{http://fwcb.cfans.umn.edu/courses/fisheryupdate/}{class webpage}.  This file should be downloaded from the webpage to a directory on your computer.
+
+The first step in loading this file into R is to change the R working directory to the directory where you saved the downloaded file.  This is accomplished with the \verb"File..Change Dir" menu item.  In the ensuing dialog boxes you should browse to the directory where you saved the file and then click \verb"OK".  Note that you will not see the actual file; you will only see the directory that it is contained in.
+
+The Excel spreadsheet can be loaded into R with \R{read.xls()} from the \R{xlsReadWrite} package (this will require you to download and install the \R{xlsReadWrite} package from CRAN -- see \href{http://fwcb.cfans.umn.edu/courses/fisheryupdate/Readings/RSetup/RSetup.pdf}{this document}).  The first argument to this function is the name of the file (contained in quotes).  Optional arguments include the name of the sheet on which the data resides and which row number the data begins.  This particular set of data is on the first sheet and the data begins in row number 4.  Thus, 
+
+<<>>=
+library(xlsReadWrite)
+bg <- read.xls("BluegillLM1.XLS",sheet=1,from=4)
+@
+
+The structure and a random sample of rows in this data frame can be observed with,
+
+<<>>=
+str(bg)
+rhead(bg)
+@
+
+From this we see that the data frame has five numerical variables -- \var{sernum}, \var{tl}, \var{fl}, \var{sl}, and \var{wght}.  The left-most column of numbers are row number labels.
+
+\section{Simple Summaries}
+\subsection{Basic Statistics}
+Simple summary statistics for the variables in the data frame can be computed with \R{Summary()} as follows,
+<<>>=
+Summary(bg$tl)
+@
+
+or, rounded to two decimals,
+
+<<>>=
+round(Summary(bg$tl),2)
+@
+
+\subsection{Histograms or Length Frequencies}
+A simple histogram of the total lengths can be constructed with \R{hist()} as follows,
+<<label=Hist1,fig=TRUE,include=FALSE>>=
+hist(bg$tl)
+@
+\includegraphics[width=3in]{Figs/lw-Hist1.PDF}
+
+Of course, this has an irritating main title and poor axis labels.  Both of these issues can be corrected with,
+<<label=Hist2,fig=TRUE,include=FALSE>>=
+hist(bg$tl,main="",xlab="Total Length (mm)")
+@
+\includegraphics[width=3in]{Figs/lw-Hist2.PDF}
+
+In addition, the breaks for the bars in the histogram may be too course to identify potential age-clases in the data.  The breaks, for example, can be set to 10-mm wide beginning at 55 mm (and ending at 235 mm; these endpoints were chosen by looking at the minimum and maximum TL values in the summary statistics above) with,
+<<label=Hist3,fig=TRUE,include=FALSE>>=
+brks <- seq(55,235,10)
+hist(bg$tl,main="",xlab="Total Length (mm)",breaks=brks)
+@
+\includegraphics[width=3in]{Figs/lw-Hist3.PDF}
+
+Furthermore, R can be told to be left-inclusive rather than right-inclusive (e.g., so that that a 65 mm fish is included in the 65-75 mm grouping rather than the 55-65 mm grouping) with,
+
+<<label=Hist4,fig=TRUE,include=FALSE>>=
+brks <- seq(55,235,10)
+hist(bg$tl,main="",xlab="Total Length (mm)",breaks=brks,right=FALSE)
+@
+\includegraphics[width=3in]{Figs/lw-Hist4.PDF}
+
+Also you may not like the fact that the x-axis does not extend as far to the right as the data.  This can be corrected with,
+
+<<label=Hist5,fig=TRUE,include=FALSE>>=
+hist(bg$tl,main="",xlab="Total Length (mm)",breaks=brks,right=FALSE,xlim=c(50,250))
+@
+\includegraphics[width=3in]{Figs/lw-Hist5.PDF}
+
+Finally, suppose that you want to focus on the fish greater than 200 mm.  You could construct a plot such as this,
+<<label=Hist6,fig=TRUE,include=FALSE>>=
+hist(bg$tl,main="",xlab="Total Length (mm)",breaks=brks,right=FALSE,xlim=c(50,250))
+subplot(hist(bg$tl[bg$tl>200],breaks=seq(200,235,5),main="",xlab="Total Length (in)"),225,17.5,c(1.5,1.5))
+@
+\includegraphics[width=3in]{Figs/lw-Hist6.PDF}
+
+A length frequency table can be constructed by first adding a length categorization variable to the \var{bg} data frame.  This variable can be easily constructed with \R{lencat()}.  The length categorizations in the example below start with a value of 50-mm and each length class is 10-mm wide.
+  
+<<>>=
+bg.mod <- lencat(bg,"tl",startcat=50,w=10)
+rhead(bg.mod)
+@
+
+The \R{table()} function can then be used to summarize the frequency of individuals in each of the length classes.  In the example below this table is saved to an object and, thus, to see the length frequency the name of this object must be submitted to R.  The proportin of individuals in each length category can be found by submitting the saved \R{table()} object to the \R{prop.table()} function.
+
+<<>>=
+bg.tab <- table(bg.mod$LCat)
+bg.tab
+prop.table(bg.tab)
+@
+
+
+\subsection{Scatterplots}
+The relationship between total length and weight can be examined with a scatterplot constructed with \R{plot()} as follows,
+<<label=Scatplot1,fig=TRUE,include=FALSE>>=
+plot(bg$wght~bg$tl,xlab="Total Length (mm)",ylab="Weight (g)")
+@
+\includegraphics[width=3in]{Figs/lw-Scatplot1.PDF}
+
+The outlier in the plot can be identified with \R{identify()} as long as the plot above is still active (i.e, you have not made another plot or closed this plot).  This function suspends the activity of the R console until you press the \verb"Stop" button on the R toolbar.  If you click on a ``point'' on the plot before you press the \verb"Stop" button then R will display the row in which that individual if found.  If you click on more than one plot it will show the rows for all selected individuals.  This is an interactive function that cannot be displayed in this textual document.  However, the command can be implemented with,
+
+<<eval=FALSE>>=
+identify(bg$wght~bg$tl)
+@
+
+A click on the plot shows that the outlier is individual number 41.  The data for this individual can be found with (note that the comma with nothing behind it is intentional),
+<<>>=
+bg[41,]
+@
+
+Individuals within five millimeters total length of this individual can be found with,
+<<>>=
+bg[bg$tl>144 & bg$tl<154,]
+@
+
+This analysis shows, as did the plot, that this individual has an abnormally high weight for it's measured length. In fact, it appears as if the weight should be 78 g rather than 178 g.
+
+The relationships between all pairs of variables can be examined at one time with \R{plot()} as follows,
+<<label=Splom1,fig=TRUE,include=FALSE>>=
+plot(~bg$sl+bg$fl+bg$tl+bg$wght)
+@
+\includegraphics[width=6in]{Figs/lw-Splom1.PDF}
+
+\section{Length-Weight Regression}
+Traditionally, length-weight data follows a power function (notice curvature and increasing variance in the \var{wght} versus \var{tl} plot above).  Thus, the relationship between the length and weight of fish is often modeled on the log-log scale.  Variables can be transformed to the log scale and saved into the original data frame with,
+
+<<>>=
+bg$logW <- log(bg$wght)
+bg$logTL <- log(bg$tl)
+rhead(bg)
+@
+
+and the plot on the log-log scale constructed with,
+
+<<label=Scatplot2,fig=TRUE,include=FALSE>>=
+plot(bg$logW~bg$logTL,xlab="log Total Length (mm)",ylab="log Weight (g)")
+@
+\includegraphics[width=3in]{Figs/lw-Scatplot2.PDF}
+
+Of course, the outlier is still evident on this plot.  There are at least three ways to address this problem.  First, the individual can be entirely removed (this removes all information for this indivdual) as follows,
+<<eval=FALSE>>=
+bg1a <- bg[-41,]
+@
+
+Second, the weight can be ``corrected'' with,
+<<eval=FALSE>>=
+bg1b <- bg
+bg1b$wght[41] <- 78
+@
+
+Third, the weight can be replaced with \R{NA}, which means ``not available'', with,
+<<>>=
+bg1c <- bg
+bg1c$wght[41] <- NA
+@
+
+In each case, we will have to re-created the \var{logW} variable.  We will assume that the erroneous weight measurement for individual 41 cannot be ``corrected'' and will replace it with a \R{NA} (i.e., we will use the \R{bg1c} data frame).
+
+Then the scatterplot can be reconstructed with,
+
+<<label=Scatplot3,fig=TRUE,include=FALSE>>=
+bg1c$logW <- log(bg1c$wght)
+plot(bg1c$logW~bg1c$logTL,xlab="log Total Length (mm)",ylab="log Weight (g)")
+@
+\includegraphics[width=3in]{Figs/lw-Scatplot3.PDF}
+
+We can now try to fit the usual linear regression model to these data on the log-log scale with,
+
+<<>>=
+attach(bg1c)
+lw.lm <- lm(logW~logTL)
+@
+
+A visual of this model is then constructed with,
+
+<<label=Fitplot1,fig=TRUE,include=FALSE>>=
+fit.plot(lw.lm,xlab="log Total Length (mm)",ylab="log Weight (g)")
+@
+\includegraphics[width=3in]{Figs/lw-Fitplot1.PDF}
+
+and a corresponding residual plot is constructed with,
+
+<<label=Residplot1,fig=TRUE,include=FALSE>>=
+residual.plot(lw.lm)
+@
+\includegraphics[width=3in]{Figs/lw-Residplot1.PDF}
+
+It is apparent from the residual plot that these data are NOT linear and the assumptions of the linear regression model have not been met.  At this point, other transformations should be considered for these data.
+
+Because the linear model assumptions have not been met it is inappropriate to look at the model results.  However, AS AN ILLUSTRATION ONLY, the summary statistics of the model fit can be extracted with,
+
+<<>>=
+summary(lw.lm)
+@
+
+Thus, the model has a slope of \Sexpr{round(coef(lw.lm)[2],2)} and an intercept of \Sexpr{round(coef(lw.lm)[1],2)}.
+
+\end{document}

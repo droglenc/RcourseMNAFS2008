@@ -1,0 +1,329 @@
+% setwd("C://aaaWork//Class Materials//MnDNR_ShortCourse//Readings//PSD//")
+% Sweave("PSD.Rnw")
+
+\documentclass[a4paper]{article}
+\include{../preamble}
+
+\usepackage{C:/Apps/R/R-2.6.1/share/texmf/Sweave}
+\begin{document}
+
+
+
+
+\title{Proportional Stock Density}
+\date{}  % makes date blank -- title will only have the title above then
+\maketitle
+\vspace{-72pt}
+
+
+\section{Initialization}
+\begin{Schunk}
+\begin{Sinput}
+> library(FSA)
+> library(xlsReadWrite)
+> setwd("C://aaaWork/Class Materials//MnDNR_ShortCourse//Readings//PSD//")
+\end{Sinput}
+\end{Schunk}
+
+\section{Data}
+\begin{Schunk}
+\begin{Sinput}
+> d <- read.xls("lab1a.xls", colClasses = c("factor", "isodate", "factor",
++     "factor", "numeric", "numeric", "numeric", "factor"))
+> str(d)
+\end{Sinput}
+\begin{Soutput}
+'data.frame':	2391 obs. of  8 variables:
+ $ species  : Factor w/ 4 levels "BG","LMB","WAE",..: 1 1 1 1 1 1 1 1 1 1 ...
+ $ date     : chr  "1999-04-28" "1999-04-28" "1999-04-28" "1999-04-28" ...
+ $ geartype : Factor w/ 2 levels "BOOM SHOCKER",..: 1 1 1 1 1 1 1 1 1 1 ...
+ $ sex      : Factor w/ 4 levels "","F","M","U": 1 1 1 1 1 1 1 1 1 1 ...
+ $ inches   : num  0.9 1 1 1 1 1 1.1 1.1 1.1 1.1 ...
+ $ grams    : num  0 0 0 0 1 1 0 0 0 0 ...
+ $ age      : num  NA NA NA NA NA NA NA NA NA NA ...
+ $ agestruct: Factor w/ 3 levels "","SCALE","SPINE": 1 1 1 1 1 1 1 1 1 1 ...
+\end{Soutput}
+\begin{Sinput}
+> levels(d$species)
+\end{Sinput}
+\begin{Soutput}
+[1] "BG"  "LMB" "WAE" "YEP"
+\end{Soutput}
+\begin{Sinput}
+> lmb <- subset(d, species == "LMB")
+> dim(lmb)
+\end{Sinput}
+\begin{Soutput}
+[1] 981   8
+\end{Soutput}
+\begin{Sinput}
+> bg <- subset(d, species == "BG")
+> dim(bg)
+\end{Sinput}
+\begin{Soutput}
+[1] 1160    8
+\end{Soutput}
+\begin{Sinput}
+> wae <- subset(d, species == "WAE")
+> dim(wae)
+\end{Sinput}
+\begin{Soutput}
+[1] 104   8
+\end{Soutput}
+\begin{Sinput}
+> yep <- subset(d, species == "YEP")
+> dim(yep)
+\end{Sinput}
+\begin{Soutput}
+[1] 146   8
+\end{Soutput}
+\end{Schunk}
+
+\section{Summaries and Visualizations}
+\begin{Schunk}
+\begin{Sinput}
+> mhist(d$inches ~ d$species, same.breaks = FALSE, same.ylim = FALSE,
++     breaks = 15)
+\end{Sinput}
+\end{Schunk}
+\includegraphics[width=6in]{Figs/PSD-mhist1}
+
+\begin{Schunk}
+\begin{Sinput}
+> tapply(d$inches, d$species, FUN = Summary, numdigs = 2)
+\end{Sinput}
+\begin{Soutput}
+$BG
+       n      NAs  Valid n     Mean St. Dev.     Min.  1st Qu.   Median  3rd Qu.     Max.
+ 1160.00     0.00  1160.00     5.12     2.34     0.90     2.90     5.10     7.20    10.50
+
+$LMB
+       n      NAs  Valid n     Mean St. Dev.     Min.  1st Qu.   Median  3rd Qu.     Max.
+  981.00     0.00   981.00    10.27     2.65     3.20     8.80    10.50    12.00    20.50
+
+$WAE
+       n      NAs  Valid n     Mean St. Dev.     Min.  1st Qu.   Median  3rd Qu.     Max.
+  104.00     0.00   104.00    18.45     2.71    11.20    17.00    18.40    20.52    23.10
+
+$YEP
+       n      NAs  Valid n     Mean St. Dev.     Min.  1st Qu.   Median  3rd Qu.     Max.
+  146.00     0.00   146.00     6.94     1.05     2.90     6.40     6.90     7.67    10.10
+\end{Soutput}
+\end{Schunk}
+
+\section{PSD -- Largemouth Bass}
+\subsection{Method I}
+\begin{Schunk}
+\begin{Sinput}
+> lmb1 <- lencat(lmb, "inches", w = 1)
+> rhead(lmb1)
+\end{Sinput}
+\begin{Soutput}
+     species       date     geartype sex inches grams age agestruct LCat
+1932     LMB 1999-03-31     FYKE NET       12.2    NA  NA             12
+2071     LMB 1999-03-31     FYKE NET       13.6   519  NA             13
+1576     LMB 1999-04-13 BOOM SHOCKER       10.2   211  NA             10
+1751     LMB 1999-04-15 BOOM SHOCKER       11.1    NA  NA             11
+1980     LMB 1999-04-13 BOOM SHOCKER       12.5   458  NA             12
+1212     LMB 1999-04-15 BOOM SHOCKER        6.0    NA  NA              6
+\end{Soutput}
+\begin{Sinput}
+> lmb.tbl <- table(lmb1$LCat)
+> lmb.tbl
+\end{Sinput}
+\begin{Soutput}
+  3   4   5   6   7   8   9  10  11  12  13  14  15  17  18  19  20
+  5   8  32 125  38  55 114 186 165 129  78  24   8   2   6   3   3
+\end{Soutput}
+\begin{Sinput}
+> lmb.rcum <- rcumsum(lmb.tbl)
+> lmb.rcum
+\end{Sinput}
+\begin{Soutput}
+  3   4   5   6   7   8   9  10  11  12  13  14  15  17  18  19  20
+981 976 968 936 811 773 718 604 418 253 124  46  22  14  12   6   3
+\end{Soutput}
+\begin{Sinput}
+> RSDval("Largemouth bass", metric = FALSE)
+\end{Sinput}
+\begin{Soutput}
+    stock.E   quality.E preferred.E memorable.E    trophy.E
+          8          12          15          20          25
+\end{Soutput}
+\begin{Sinput}
+> lmb.stock <- lmb.rcum["8"]
+> lmb.stock
+\end{Sinput}
+\begin{Soutput}
+  8
+773
+\end{Soutput}
+\begin{Sinput}
+> lmb.qual <- lmb.rcum["12"]
+> lmb.qual
+\end{Sinput}
+\begin{Soutput}
+ 12
+253
+\end{Soutput}
+\begin{Sinput}
+> lmb.psd <- lmb.qual/lmb.stock
+> lmb.psd
+\end{Sinput}
+\begin{Soutput}
+       12
+0.3272962
+\end{Soutput}
+\begin{Sinput}
+> bin.ci(lmb.qual, lmb.stock)
+\end{Sinput}
+\begin{Soutput}
+  95% LCI   95% UCI
+0.2951430 0.3611575
+\end{Soutput}
+\end{Schunk}
+
+\subsection{Method II}
+\begin{Schunk}
+\begin{Sinput}
+> lmb.cuts <- RSDval("Largemouth bass", metric = FALSE)
+> lmb.cuts
+\end{Sinput}
+\begin{Soutput}
+    stock.E   quality.E preferred.E memorable.E    trophy.E
+          8          12          15          20          25
+\end{Soutput}
+\begin{Sinput}
+> lmb2 <- lencat(lmb, "inches", breaks = c(0, lmb.cuts))
+> lmb2.tbl <- table(lmb2$LCat)
+> lmb2.tbl
+\end{Sinput}
+\begin{Soutput}
+  0   8  12  15  20
+208 520 231  19   3
+\end{Soutput}
+\begin{Sinput}
+> lmb2.rcum <- rcumsum(lmb2.tbl)
+> lmb2.rcum
+\end{Sinput}
+\begin{Soutput}
+  0   8  12  15  20
+981 773 253  22   3
+\end{Soutput}
+\begin{Sinput}
+> lmb.stock <- lmb2.rcum["8"]
+> lmb.qual <- lmb2.rcum["12"]
+> lmb.psd <- lmb.qual/lmb.stock
+> lmb.psd
+\end{Sinput}
+\begin{Soutput}
+       12
+0.3272962
+\end{Soutput}
+\begin{Sinput}
+> bin.ci(lmb.qual, lmb.stock)
+\end{Sinput}
+\begin{Soutput}
+  95% LCI   95% UCI
+0.2951430 0.3611575
+\end{Soutput}
+\end{Schunk}
+
+\section{PSD -- Bluegill}
+\begin{Schunk}
+\begin{Sinput}
+> bg.cuts <- RSDval("Bluegill", metric = FALSE)
+> bg.cuts
+\end{Sinput}
+\begin{Soutput}
+    stock.E   quality.E preferred.E memorable.E    trophy.E
+          3           6           8          10          12
+\end{Soutput}
+\begin{Sinput}
+> bg1 <- lencat(bg, "inches", breaks = c(0, bg.cuts))
+> bg.tbl <- table(bg1$LCat)
+> bg.rcum <- rcumsum(bg.tbl)
+> bg.rcum
+\end{Sinput}
+\begin{Soutput}
+   0    3    6    8   10
+1160  868  479  156    3
+\end{Soutput}
+\begin{Sinput}
+> bg.stock <- bg.rcum["3"]
+> bg.qual <- bg.rcum["6"]
+> bg.psd <- bg.qual/bg.stock
+> bg.psd
+\end{Sinput}
+\begin{Soutput}
+        6
+0.5518433
+\end{Soutput}
+\begin{Sinput}
+> bin.ci(bg.qual, bg.stock)
+\end{Sinput}
+\begin{Soutput}
+  95% LCI   95% UCI
+0.5186036 0.5846262
+\end{Soutput}
+\end{Schunk}
+
+
+\section{Tic-Tac-Toe Graph -- Largemouth Bass and Bluegill}
+\begin{Schunk}
+\begin{Sinput}
+> tictactoe()
+> tictactoe.add(c(lmb.qual, lmb.stock), c(bg.qual, bg.stock), pt.col = "blue")
+\end{Sinput}
+\begin{Soutput}
+Predator PSD was 33 with a 95% CI of (29.4,36.2).
+Prey PSD was 55 with a 95% CI of (51.8,58.5).
+\end{Soutput}
+\end{Schunk}
+\includegraphics[width=4in]{Figs/PSD-TTT1}
+
+\section{PSD -- Walleye and Yellow Perch}
+\begin{Schunk}
+\begin{Sinput}
+> wae.cuts <- RSDval("Walleye", metric = FALSE)
+> wae.cuts
+\end{Sinput}
+\begin{Soutput}
+    stock.E   quality.E preferred.E memorable.E    trophy.E
+         10          15          20          25          30
+\end{Soutput}
+\begin{Sinput}
+> wae1 <- lencat(wae, "inches", breaks = c(0, wae.cuts))
+> wae.tbl <- table(wae1$LCat)
+> wae.rcum <- rcumsum(wae.tbl)
+> wae.stock <- wae.rcum["10"]
+> wae.qual <- wae.rcum["15"]
+> yep.cuts <- RSDval("Yellow perch", metric = FALSE)
+> yep.cuts
+\end{Sinput}
+\begin{Soutput}
+    stock.E   quality.E preferred.E memorable.E    trophy.E
+          5           8          10          12          15
+\end{Soutput}
+\begin{Sinput}
+> yep1 <- lencat(yep, "inches", breaks = c(0, yep.cuts))
+> yep.tbl <- table(yep1$LCat)
+> yep.rcum <- rcumsum(yep.tbl)
+> yep.stock <- yep.rcum["5"]
+> yep.qual <- yep.rcum["8"]
+\end{Sinput}
+\end{Schunk}
+\begin{Schunk}
+\begin{Sinput}
+> tictactoe.add(c(wae.qual, wae.stock), c(yep.qual, yep.stock), pt.col = "green")
+\end{Sinput}
+\end{Schunk}
+\begin{Schunk}
+\begin{Soutput}
+Predator PSD was 91 with a 95% CI of (84.2,96).
+Prey PSD was 16 with a 95% CI of (10.3,23.1).
+\end{Soutput}
+\end{Schunk}
+\includegraphics[width=4in]{Figs/PSD-TTT2}
+
+\end{document}

@@ -1,0 +1,252 @@
+% setwd("C://aaaWork//Class Materials//MnDNR_ShortCourse//Readings//Mortality//")
+% Sweave("Mortality.Rnw")
+
+\documentclass[a4paper]{article}
+\include{../preamble}
+
+\usepackage{C:/Apps/R/R-2.6.1/share/texmf/Sweave}
+\begin{document}
+
+
+
+
+\title{Mortality Estimation}
+\date{}  % makes date blank -- title will only have the title above then
+\maketitle
+\vspace{-72pt}
+
+
+\section{Initialization}
+\begin{Schunk}
+\begin{Sinput}
+> library(FSA)
+> setwd("C://aaaWork/Class Materials//MnDNR_ShortCourse//Readings//mortality//")
+\end{Sinput}
+\end{Schunk}
+
+\section{Previously Summarized Catches}
+\subsection{From First Principles}
+
+\begin{Schunk}
+\begin{Sinput}
+> age <- 0:5
+> ct <- c(47, 102, 126, 104, 81, 64)
+> logct <- log(ct)
+> plot(logct ~ age, pch = 19, cex = 1.25)
+\end{Sinput}
+\end{Schunk}
+\includegraphics[width=3in]{Figs/mort-CCurve1}
+
+\begin{Schunk}
+\begin{Sinput}
+> rows2use <- 3:6
+> age2 <- age[rows2use]
+> logct2 <- logct[rows2use]
+> lm1 <- lm(logct2 ~ age2)
+> summary(lm1)
+\end{Sinput}
+\begin{Soutput}
+Call:
+lm(formula = logct2 ~ age2)
+
+Residuals:
+         1          2          3          4
+-0.0145401  0.0217827  0.0000548 -0.0072974
+
+Coefficients:
+             Estimate Std. Error t value Pr(>|t|)
+(Intercept)  5.307250   0.031589  168.01 3.54e-05 ***
+age2        -0.228214   0.008597  -26.54  0.00142 **
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Residual standard error: 0.01922 on 2 degrees of freedom
+Multiple R-Squared: 0.9972,	Adjusted R-squared: 0.9958
+F-statistic: 704.6 on 1 and 2 DF,  p-value: 0.001416
+\end{Soutput}
+\begin{Sinput}
+> confint(lm1)
+\end{Sinput}
+\begin{Soutput}
+                 2.5 %     97.5 %
+(Intercept)  5.1713333  5.4431659
+age2        -0.2652056 -0.1912221
+\end{Soutput}
+\begin{Sinput}
+> fit.plot(lm1)
+\end{Sinput}
+\end{Schunk}
+\includegraphics[width=3in]{Figs/mort-CCurve2}
+
+\subsection{Using \R{catch.curve()}}
+\begin{Schunk}
+\begin{Sinput}
+> cc1 <- catch.curve(age, ct, 2:5)
+> summary(cc1)
+\end{Sinput}
+\begin{Soutput}
+Call:
+lm(formula = log.catch.e ~ age.e)
+
+Residuals:
+         1          2          3          4
+-0.0145401  0.0217827  0.0000548 -0.0072974
+
+Coefficients:
+             Estimate Std. Error t value Pr(>|t|)
+(Intercept)  5.307250   0.031589  168.01 3.54e-05 ***
+age.e       -0.228214   0.008597  -26.54  0.00142 **
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Residual standard error: 0.01922 on 2 degrees of freedom
+Multiple R-Squared: 0.9972,	Adjusted R-squared: 0.9958
+F-statistic: 704.6 on 1 and 2 DF,  p-value: 0.001416
+\end{Soutput}
+\begin{Sinput}
+> confint(cc1)
+\end{Sinput}
+\begin{Soutput}
+                 2.5 %     97.5 %
+(Intercept)  5.1713333  5.4431659
+age.e       -0.2652056 -0.1912221
+\end{Soutput}
+\begin{Sinput}
+> summary(cc1, type = "params")
+\end{Sinput}
+\begin{Soutput}
+    Estimate  Std. Error  t value    Pr(>|t|)
+Z  0.2282138 0.008597424 26.54444 0.001416216
+A 20.4045950          NA       NA          NA
+\end{Soutput}
+\begin{Sinput}
+> confint(cc1, type = "params")
+\end{Sinput}
+\begin{Soutput}
+     95% LCI    95% UCI
+Z  0.1912221  0.2652056
+A 17.4050868 23.2951735
+\end{Soutput}
+\begin{Sinput}
+> plot(cc1)
+\end{Sinput}
+\end{Schunk}
+\includegraphics[width=3in]{Figs/mort-CCurve3}
+
+
+\section{Data File of Ages}
+
+\begin{Schunk}
+\begin{Sinput}
+> data(FWDrumLE1)
+> str(FWDrumLE1)
+\end{Sinput}
+\begin{Soutput}
+'data.frame':	1577 obs. of  2 variables:
+ $ age: int  1 1 1 1 1 1 1 1 1 1 ...
+ $ tl : int  106 100 117 110 110 115 118 118 113 126 ...
+\end{Soutput}
+\begin{Sinput}
+> rhead(FWDrumLE1)
+\end{Sinput}
+\begin{Soutput}
+     age  tl
+1444   7 341
+1428   7 325
+40     1 133
+1048   5 278
+1365   6 320
+354    3 228
+\end{Soutput}
+\begin{Sinput}
+> age.freq <- table(FWDrumLE1$age)
+> age.freq
+\end{Sinput}
+\begin{Soutput}
+  1   2   3   4   5   6   7   8   9  10  11  13  14
+162  75 339 343 292 186  78  54  20  18   6   2   2
+\end{Soutput}
+\begin{Sinput}
+> age <- as.numeric(rownames(age.freq))
+> freq <- as.numeric(age.freq)
+> plot(log(freq) ~ age, pch = 19, cex = 1.25)
+\end{Sinput}
+\end{Schunk}
+\includegraphics[width=3in]{Figs/mort-CCurve4}
+
+NOTE that no fish of age-12 were observed.
+
+\begin{Schunk}
+\begin{Sinput}
+> cc2 <- catch.curve(age, freq, c(5:11, 13, 14))
+> summary(cc2, type = "params")
+\end{Sinput}
+\begin{Soutput}
+    Estimate Std. Error  t value     Pr(>|t|)
+Z  0.5911686 0.02936888 20.12908 1.870079e-07
+A 44.6320147         NA       NA           NA
+\end{Soutput}
+\begin{Sinput}
+> confint(cc2, type = "params")
+\end{Sinput}
+\begin{Soutput}
+     95% LCI   95% UCI
+Z  0.5217223  0.660615
+A 40.6502498 48.346644
+\end{Soutput}
+\begin{Sinput}
+> plot(cc2)
+\end{Sinput}
+\end{Schunk}
+\includegraphics[width=3in]{Figs/mort-CCurve5}
+
+\begin{Schunk}
+\begin{Sinput}
+> cc3 <- catch.curve(age, freq, 5:11)
+> summary(cc3, type = "params")
+\end{Sinput}
+\begin{Soutput}
+    Estimate Std. Error  t value     Pr(>|t|)
+Z  0.6316682 0.03969337 15.91369 1.783397e-05
+A 46.8295924         NA       NA           NA
+\end{Soutput}
+\begin{Sinput}
+> confint(cc3, type = "params")
+\end{Sinput}
+\begin{Soutput}
+     95% LCI    95% UCI
+Z  0.5296331  0.7337033
+A 41.1179051 51.9872339
+\end{Soutput}
+\end{Schunk}
+
+\section{Chapman-Robson Method}
+\begin{Schunk}
+\begin{Sinput}
+> cr1 <- chapman.robson(age, freq, 5:11)
+> summary(cr1)
+\end{Sinput}
+\begin{Soutput}
+Intermediate Statistics
+n=654; T=710
+
+Estimates with Standard Errors
+   Estimate  Std. Err.
+S 0.5209098 0.01353634
+Z 0.6521785 0.02598597
+\end{Soutput}
+\begin{Sinput}
+> confint(cr1)
+\end{Sinput}
+\begin{Soutput}
+    95% LCI   95% UCI
+S 0.4943790 0.5474405
+Z 0.6012469 0.7031100
+\end{Soutput}
+\begin{Sinput}
+> plot(cr1)
+\end{Sinput}
+\end{Schunk}
+\includegraphics[width=4in]{Figs/mort-CRobson1}
+
+\end{document}

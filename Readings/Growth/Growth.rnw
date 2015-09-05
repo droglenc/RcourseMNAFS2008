@@ -1,0 +1,104 @@
+% setwd("C://aaaWork//Class Materials//MnDNR_ShortCourse//Readings//Growth//")
+% Sweave("Growth.Rnw")
+
+\documentclass[a4paper]{article}
+\include{../preamble}
+
+\begin{document}
+\SweaveOpts{prefix.string=figs/growth}
+\SweaveOpts{eps=FALSE}
+\SweaveOpts{width=5,height=5}
+
+\title{Size-At-Age Models}
+\date{}  % makes date blank -- title will only have the title above then
+\maketitle
+\vspace{-72pt}
+
+<<echo=false,results=hide>>=
+options(width=90)
+options(SweaveHooks = list(fig = function() par(mar=c(3.5,3.5,1,1),mgp=c(2,0.75,0))))
+library(FSA)
+detach.all()
+@
+
+\section{Initialization}
+<<results=hide>>=
+library(FSA)
+setwd("C://aaaWork/Class Materials//MnDNR_ShortCourse//Readings//Growth//")
+@
+
+\section{Traditional Von Bertalanffy Example -- Rainbow Trout} 
+<<label=CatchAtAge1,fig=TRUE,include=FALSE>>=
+library(FSA)
+data(TroutBR)
+str(TroutBR)
+rbt <- subset(TroutBR,species=="Rainbow")
+attach(rbt)
+plot(jitter(tl,1)~jitter(age,0.5),xlab="Age [jittered]",ylab="Total Length (in) [jittered]")
+@
+\includegraphics[width=3in]{Figs/growth-CatchAtAge1}
+
+<<>>=
+Summary(tl)
+@
+
+The following command is interactive and cannot be shown in this document
+<<eval=FALSE>>=
+growmodel.sim("vb",age,tL,max.len=35)
+@
+
+<<label=FitPlot1,fig=TRUE,include=FALSE>>=
+svb <- list(Linf=31.3,K=0.3,to=0.6)
+vbl1 <- nls(tl~Linf*(1-exp(-K*(age-to))),start=svb)
+summary(vbl1)
+fit.plot(vbl1,xlab="Age",ylab="Total Length (in)")
+@
+\includegraphics[width=3in]{Figs/growth-FitPlot1}
+
+The following \R{boot.case()} function requires that the \R{alr3} package be installed and loaded.  The \R{boot.case()} function requires patience -- the example below took 3-4 minutes to process.
+
+<<>>=
+library(alr3)
+coef.boot <- boot.case(vbl1)
+ci.bc(coef.boot)
+ho.bc(coef.boot,1,28.5,alt="greater")
+predict(vbl1,data.frame(age=8))
+linf.bc <- coef.boot[,1]
+k.bc <- coef.boot[,2]
+to.bc <- coef.boot[,3]
+pv <- linf.bc*(1-exp(-k.bc*(8-to.bc)))
+quantile(pv,c(0.025,0.975))
+@
+
+
+\section{Galucci and Quinn Von Bertalanffy Example -- Rainbow Trout} 
+The following commands assume that the rainbow trout data frame created above is still attached.
+
+<<eval=F>>=
+growmodel.sim("vbgq",Age,TL,max.len=35)
+@
+
+<<label=FitPlot2,fig=TRUE,include=FALSE>>=
+svb2 <- list(omega=10,K=0.3,to=0.6)
+vbl2 <- nls(tl~omega/K*(1-exp(-K*(age-to))),start=svb2)
+summary(vbl2)
+fit.plot(vbl2,xlab="Age",ylab="Total Length (in)")
+@
+\includegraphics[width=3in]{Figs/growth-FitPlot2}
+
+<<>>=
+coef.boot2 <- boot.case(vbl2)
+ci.bc(coef.boot2)
+predict(vbl2,data.frame(age=8))
+omega.bc <- coef.boot2[,1]
+k.bc2 <- coef.boot2[,2]
+to.bc2 <- coef.boot2[,3]
+pv2 <- omega.bc/k.bc2*(1-exp(-k.bc*(8-to.bc)))
+quantile(pv2,c(0.025,0.975))
+@
+
+<<>>=
+detach(rbt)
+@
+
+\end{document}

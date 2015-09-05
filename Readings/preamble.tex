@@ -1,0 +1,94 @@
+\usepackage{amssymb,amsmath,amsfonts}       %American Math Society packages
+\usepackage{color}
+\usepackage[pagebackref=true]{hyperref}     %allows back reference from bibliography entry
+\hypersetup{
+    pdfauthor = Derek H. Ogle,
+    plainpages = false,                     %front matter pages saved as page.i instead of page.1 to reduce errors
+    colorlinks = true,                      %allows colored links to be used -- rather than boxes
+    linkcolor = red,                        %general internal links (to equations, tables, from TOC)
+    citecolor = blue,                       %color for citations
+    urlcolor = magenta,                     %color for linked URLs
+    bookmarksopen = false,                  %opens bookmark tree in acrobat
+    breaklinks = true                       %allows long links to break onto two lines
+}
+\usepackage{C:/Apps/R/R-2.6.1/share/texmf/Sweave}
+
+%==================================================================================================================================
+% Overall Style Definitions --- Sizes
+%==================================================================================================================================
+% These are for letter paper
+  \oddsidemargin = 0in    %default is 1 in, this keeps it at 1 in
+  \evensidemargin = 0in
+  \textheight = 9.5in
+
+\textwidth = 6.5in
+\topmargin = 0in
+\headheight = 0.2in
+\headsep = 0.2in
+
+\parskip = 0.125in
+\parindent = 0.0in
+
+\newcommand{\R}[1]{      % command to put around R functions that are within a sentence
+  \texttt{#1}            % Use \R{summary(lm1)}
+}
+
+\newcommand{\var}[1]{    % command to put around data variables thatare within a sentence
+  \textsf{\textsl{#1}}   % Use \var{Eggs}
+}
+
+\newcommand{\dfile}[1]{  % command to put around data file names that are within a sentence
+  \textsf{#1}            % Use \dfile{Eggs}
+}
+
+%defines a figure reference command so you don't have to type Figure each time
+\newcommand{\figref}[1]{
+  \hspace{-0.4em}\textbf{Figure \ref{#1}}\hspace{-0.3em}
+}
+
+%same as above but automatically in parentheses
+\newcommand{\figrefp}[1]{
+  \hspace{-0.4em}\textbf{(Figure \ref{#1})}\hspace{-0.3em}
+}
+
+%same as \figref except for tables
+\newcommand{\tabref}[1]{
+  \hspace{-0.4em}\textbf{Table \ref{#1}}\hspace{-0.3em}
+}
+
+%same as \figrefp except for tables
+\newcommand{\tabrefp}[1]{
+  \hspace{-0.4em}\textbf{(Table \ref{#1})}\hspace{-0.3em}
+}
+
+\newcommand{\sectref}[1]{
+  \hspace{-0.4em}\textbf{Section \ref{#1}}\hspace{-0.3em}
+}
+
+\newcommand{\sectrefp}[1]{
+  \hspace{-0.4em}\textbf{(Section \ref{#1})}\hspace{-0.3em}
+}
+
+\newenvironment{Itemize}{
+\begin{itemize}
+  \setlength{\topsep}{1pt}      %doesn't seem to have an effect
+  \setlength{\partopsep}{1pt}   %doesn't seem to have an effect
+  \setlength{\itemsep}{1pt}
+  \setlength{\parskip}{0pt}     %doesn't seem to have an effect
+  \setlength{\parsep}{0pt}}     %doesn't seem to have an effect
+{\end{itemize}
+}
+
+\newenvironment{Enumerate}{
+\begin{enumerate}
+  \setlength{\topsep}{1pt}
+  \setlength{\partopsep}{1pt}
+  \setlength{\itemsep}{1pt}
+  \setlength{\parskip}{0pt}
+  \setlength{\parsep}{0pt}}
+{\end{enumerate}
+} 
+
+%removes extra space in SCHUNKs
+\fvset{listparameters={\setlength{\topsep}{0pt}}}
+\renewenvironment{Schunk}{\vspace{\topsep}}{\vspace{\topsep}}

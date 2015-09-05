@@ -1,0 +1,101 @@
+% setwd("C://aaaWork//Class Materials//MnDNR_ShortCourse//Readings//Depletion//")
+% Sweave("Depletion.Rnw")
+
+\documentclass[a4paper]{article}
+\include{../preamble}
+
+\begin{document}
+\SweaveOpts{prefix.string=figs/dep}
+\SweaveOpts{eps=FALSE}
+\SweaveOpts{width=5,height=5}
+
+\title{Depletion Estimates of Abundance}
+\date{}  % makes date blank -- title will only have the title above then
+\maketitle
+\vspace{-72pt}
+
+<<echo=false,results=hide>>=
+options(width=90)
+options(SweaveHooks = list(fig = function() par(mar=c(3.5,3.5,1,1),mgp=c(2,0.75,0))))
+library(FSA)
+detach.all()
+@
+
+\section{Initialization}
+<<results=hide>>=
+library(FSA)
+setwd("C://aaaWork/Class Materials//MnDNR_ShortCourse//Readings//depletion//")
+@
+
+
+\section{Little Silver Lake Largemouth Bass}
+\subsection{Leslie -- Step-by-Step Regression}
+<<>>=
+data(SMBassLS)
+SMBassLS
+attach(SMBassLS)
+cpe <- catch/effort
+cpe
+K <- cumsum(catch)-catch
+K
+les1 <- lm(cpe~K)
+summary(les1)
+@
+
+<<label=Leslie1,fig=TRUE,include=FALSE>>=
+fit.plot(les1,xlab="Cumulative Catch",ylab="CPE")
+@
+\includegraphics[width=3in]{Figs/dep-Leslie1}
+
+\subsection{Leslie -- Using \R{depletion()} function}
+<<>>=
+les2 <- depletion(catch,effort)
+summary(les2)
+confint(les2)
+@
+
+<<label=Leslie2,fig=TRUE,include=FALSE>>=
+plot(les2)
+@
+\includegraphics[width=3in]{Figs/dep-Leslie2}
+
+<<>>=
+summary(les2,type="lm")
+confint(les2,parm="lm")
+@
+
+\subsection{Leslie -- with Ricker Modification}
+<<>>=
+les3 <- depletion(catch,effort,ricker.mod=TRUE)
+summary(les3)
+confint(les3)
+@
+
+\subsection{Delury -- Using \R{depletion()} function}
+<<>>=
+del1 <- depletion(catch,effort,type="Delury",ricker.mod=TRUE)
+summary(del1)
+confint(del1)
+@
+
+<<label=Delury1,fig=TRUE,include=FALSE>>=
+plot(del1)
+@
+\includegraphics[width=3in]{Figs/dep-Delury1}
+
+\subsection{Zippin Removal Method -- Using \R{removal()} function}
+<<>>=
+zip1 <- removal(catch)
+summary(zip1)
+confint(zip1)
+@
+
+\subsection{Carle-Strub Removal Method -- Using \R{removal()} function}
+<<>>=
+cs1 <- removal(catch,type="CarleStrub")
+summary(cs1)
+confint(cs1)
+@
+
+
+\end{document}

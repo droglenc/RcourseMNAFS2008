@@ -2,12 +2,17 @@
 .Rhistory
 .Rapp.history
 
-# Example code in package build process
-*-Ex.R
+# Unnecessary files
+fish_mgmt_course_2008_roster.xls
+readings/*.aux
+readings/Depletion/Figs/*.pdf
+readings/EnterDataExplore/Figs/*.pdf
+readings/ExploreCPE/Figs/*.pdf
+readings/ExploreLW/Figs/*.pdf
+readings/Growth/Figs/*.pdf
+readings/MarkRecapture/Figs/*.pdf
+readings/Mortality/Figs/*.pdf
+readings/PSD/Figs/*.pdf
+readings/RSetup/Figs/*.pdf
 
-# RStudio files
-.Rproj.user/
-
-# produced vignettes
-vignettes/*.html
-vignettes/*.pdf
+.Rproj.user
